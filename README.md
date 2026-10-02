@@ -53,17 +53,23 @@ A computer vision application that detects missing products on retail shelves an
 ```
 
 Retail_intellig/
+│
 ├── backend/
-    ├── main.py
-    ├── fast_api
+│   ├── main.py
+│   └── fast_api/
+│
 ├── fontend/
+│
 ├── models/
-    ├── model_v1.pkl
+│   └── model_v1.pkl
+│
 ├── results/
+│
 ├── ml_flow_tracking/
+│
 ├── docker-compose.yml
 ├── Dockerfile
 ├── requirements.txt
 ├── .gitigonore
-├── README.md
+└── README.md
 ```
