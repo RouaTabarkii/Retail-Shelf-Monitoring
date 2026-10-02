@@ -42,10 +42,28 @@ A computer vision application that detects missing products on retail shelves an
 
 - pip install -r requirements.txt
 
-## 5. DataSet used : 
+## 5. DataSet : 
 
 - Source : https://www.kaggle.com/datasets/thedatasith/sku110k-annotations
 
 - Purpose: Used to fine-tune YOLOv11.
 
 ## 6. Project structure : 
+
+```
+
+Retail_intellig/
+├── backend/
+    ├── main.py
+    ├── fast_api
+├── fontend/
+├── models/
+    ├── model_v1.pkl
+├── results/
+├── ml_flow_tracking/
+├── docker-compose.yml
+├── Dockerfile
+├── requirements.txt
+├── .gitigonore
+├── README.md
+```
