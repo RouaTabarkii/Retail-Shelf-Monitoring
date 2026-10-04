@@ -1,0 +1,1 @@
+# Classe Wrapper de chargement du modele ONNX
