@@ -56,12 +56,12 @@ Retail-Intelligence/
 │
 ├── backend/
 │   ├── app/
-│   │   ├── inference.py       # Model inference and prediction logic
-│   │   ├── main.py            # FastAPI application entry point
-│   │   └── schema.py           # API request/response schemas
+│   │   ├── inference.py       
+│   │   ├── main.py            
+│   │   └── schema.py          
 │   │
 │   ├── tests/
-│   │   └── test_api.py         # API tests
+│   │   └── test_api.py         
 │   │
 │   └── requirements.txt        # Backend dependencies
 │
