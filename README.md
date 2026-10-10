@@ -50,26 +50,30 @@ A computer vision application that detects missing products on retail shelves an
 
 ## 6. Project structure : 
 
-```
 
-Retail_intellig/
+```
+Retail-Intelligence/
 │
 ├── backend/
-│   ├── main.py
-│   └── fast_api/
+│   ├── app/
+│   │   ├── inference.py       
+│   │   ├── main.py            
+│   │   └── schema.py          
+│   │
+│   ├── tests/
+│   │   └── test_api.py         
+│   │
+│   └── requirements.txt        # Backend dependencies
 │
-├── fontend/
+├── core/
+│   ├── gap_analysis.py         # Shelf gap detection logic
+│   └── test_gab_rule.ipynb     # Notebook for testing gap detection rules
 │
-├── models/
-│   └── model_v1.pkl
+├── model/
+│   └── best.pt                 # Trained YOLO model
 │
-├── results/
+├── training/
+│   └── train.py                # Model training script
 │
-├── ml_flow_tracking/
-│
-├── docker-compose.yml
-├── Dockerfile
-├── requirements.txt
-├── .gitigonore
+├── .gitignore
 └── README.md
-```
