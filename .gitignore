@@ -1,1 +1,6 @@
 remarque.md
+
+*.pt
+*.onnx
+
+.env
