@@ -18,7 +18,7 @@ A computer vision application that detects missing products on retail shelves an
 
 ## 3. Technologies :
 
-- Fine tuninig Yolov11
+- Fine tuninig Yolov26n
 
 - Python
 
@@ -33,6 +33,8 @@ A computer vision application that detects missing products on retail shelves an
 - FastAPI
 
 - ONNX
+
+- DBSCAN
 
 ## 4. Installation :
 
