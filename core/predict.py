@@ -1,10 +1,12 @@
-from ultralytics import YOLO
 import numpy as np
 from sklearn.cluster import DBSCAN
 import cv2
+from ultralytics import YOLO
+from backend.app.main import model
+
+model =  YOLO("C:/Users/LENOVO/Retail-Shelf-Monitoring/runs/baseline/weights/best.pt")
 
 
-model = YOLO("C:/Users/LENOVO/Retail-Shelf-Monitoring/runs/baseline/weights/best.pt")
 
 source = "C:/Users/LENOVO/Retail-Shelf-Monitoring/data/samples/test_0.jpg"  
 results = model(
@@ -22,6 +24,8 @@ bounding_box_sorted = sorted(bounding_box, key=lambda box: box[3])
 
 
 image = cv2.imread(source)
+if image is None:
+    raise ValueError(f"Unable to read image: {source}")
 
 H = image.shape[0]
 
