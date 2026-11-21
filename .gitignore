@@ -4,3 +4,16 @@ remarque.md
 *.onnx
 
 .env
+
+predictions/
+
+/core/predict.ipynb
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+.ipynb_checkpoints/
+
+.venv/
+venv/
