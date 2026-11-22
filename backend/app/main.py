@@ -5,6 +5,7 @@ from ultralytics import YOLO
 from contextlib import asynccontextmanager
 import numpy as np
 from sklearn.cluster import DBSCAN
+from fastapi.middleware.cors import CORSMiddleware
 
 
 @asynccontextmanager
@@ -19,6 +20,14 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/predict")
 async def predict(request: Request, file: UploadFile = File(...)):
@@ -42,8 +51,8 @@ async def predict(request: Request, file: UploadFile = File(...)):
         project="C:/Users/LENOVO/Retail-Shelf-Monitoring/predictions",
         name="test_0",)
     
-    bounding_box = result[0].boxes.xyxy.cpu().numpy()                      # CHANGÉ 1
-    bounding_box_sorted = np.array(sorted(bounding_box, key=lambda box: box[3]))  # CHANGÉ 1
+    bounding_box = result[0].boxes.xyxy.cpu().numpy()                      
+    bounding_box_sorted = np.array(sorted(bounding_box, key=lambda box: box[3]))  
     H = image.shape[0]
 
     y2_normalized = np.array([
@@ -70,7 +79,7 @@ async def predict(request: Request, file: UploadFile = File(...)):
 
 
     SEUIL = 100
-    gaps = []                                                              # CHANGÉ 2
+    gaps = []                                                              
 
     for shelf_id, products in sorted_shelves.items():
 
@@ -81,17 +90,27 @@ async def predict(request: Request, file: UploadFile = File(...)):
 
             gap = next_product[0] - current_product[2]
 
-            if gap > SEUIL:                                                # CHANGÉ 2
+            if gap > SEUIL:                                               
                 gaps.append({
                     "etagere": int(shelf_id),
                     "ecart_px": round(float(gap), 2),
+                    "gap_end" : float(next_product[0]),
+                    "gap_start" : float(current_product [2]),
+                    "y_haut" : float(min(p[1] for p in products)),
+                    "y_bas" : float(max(p[3] for p in products))
                 })
 
-    return {                                                               # CHANGÉ 3
+    return {                                                               
         "filename": file.filename,
         "num_boxes": len(bounding_box),
         "gap_detected": len(gaps) > 0,
         "gaps": gaps,
+        "etageres": {
+            int(k): [p.tolist() for p in v] for k, v in sorted_shelves.items()
+        },
+        "image_height" : image.shape[0],
+        "image_width" : image.shape[1]
+
     }
 
 
