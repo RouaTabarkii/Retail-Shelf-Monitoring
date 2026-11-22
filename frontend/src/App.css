@@ -53,15 +53,6 @@
   font-size: 18px;
   color: #111827;
 }
-.card-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-.card-head h2 {
-  margin: 0;
-}
 
 .upload-row {
   display: flex;
@@ -77,11 +68,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.btn-analyze {
-  padding: 11px 26px;
-  font-size: 15px;
-  margin-left: auto;
 }
 .error {
   margin: 14px 0 0;
@@ -137,6 +123,10 @@
   font-weight: 700;
   color: #111827;
 }
+.stat-text {
+  font-size: 16px;
+  line-height: 1.3;
+}
 .stat-label {
   font-size: 13px;
   color: #6b7280;
@@ -154,6 +144,49 @@
 }
 .stat-ok .stat-value {
   color: #15803d;
+}
+
+/* La vidéo et le calque de dessin posé par-dessus */
+.video-box {
+  position: relative;
+}
+.video-box video {
+  display: block;
+  width: 100%;
+  border-radius: 8px;
+}
+.video-box svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+  color: #374151;
+  margin-bottom: 12px;
+}
+.dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.dot-green {
+  background: lime;
+}
+.dot-orange {
+  background: orange;
+}
+.dot-red {
+  background: red;
 }
 
 .table-wrap {
@@ -179,81 +212,4 @@ td {
 }
 tr:last-child td {
   border-bottom: none;
-}
-
-.badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-}
-.badge-ok {
-  background: #dcfce7;
-  color: #15803d;
-}
-.badge-alert {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(17, 24, 39, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 24px 16px;
-  overflow-y: auto;
-  z-index: 100;
-}
-.modal-content {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 16px;
-  width: 100%;
-  max-width: 1100px;
-}
-.modal-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-.legend {
-  display: flex;
-  gap: 16px;
-  font-size: 14px;
-  color: #374151;
-}
-.dot {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-  margin-right: 6px;
-  vertical-align: middle;
-}
-.dot-green {
-  background: lime;
-}
-.dot-red {
-  background: red;
-}
-
-.image-box {
-  position: relative;
-}
-.image-box img {
-  display: block;
-  width: 100%;
-  border-radius: 8px;
-}
-.image-box svg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
 }

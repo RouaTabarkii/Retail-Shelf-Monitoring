@@ -9,15 +9,16 @@ mlflow.set_experiment("Retail-shelf-Monitoring")
 
 freeze11 = "C:/Users/LENOVO/Retail-Shelf-Monitoring/runs/freeze11"
 baseline = "C:/Users/LENOVO/Retail-Shelf-Monitoring/runs/baseline"
+yolov11 = "C:/Users/LENOVO/Retail-Shelf-Monitoring/runs/yolov11"
 
 
 
 
-columns_to_keep = ["epoch","train/box_loss", 'train/cls_loss',"train/l1_loss","metrics/precision(B)","metrics/recall(B)","metrics/mAP50(B)", "metrics/mAP50-95(B)",
-                   "val/box_loss" , "val/cls_loss" , "val/l1_loss"]
+columns_to_keep = ["epoch","train/box_loss", 'train/cls_loss',"metrics/precision(B)","metrics/recall(B)","metrics/mAP50(B)", "metrics/mAP50-95(B)",
+                   "val/box_loss" , "val/cls_loss"]
 
-columns_to_log = ["train/box_loss", "train/cls_loss", "train/l1_loss", "metrics/precision", "metrics/recall", "metrics/mAP50", "metrics/mAP50-95",
-                  "val/box_loss", "val/cls_loss", "val/l1_loss"]
+columns_to_log = ["train/box_loss", "train/cls_loss", "metrics/precision", "metrics/recall", "metrics/mAP50", "metrics/mAP50-95",
+                  "val/box_loss", "val/cls_loss"]
 
 
 
@@ -67,7 +68,8 @@ def run_dirs(run) :
             mlflow.log_artifact(file_path, artifact_path=folder) #the artifact_path y9lk esm l var li bch ytsajel bih l artifact f mlflow
 
 
-# run_dirs(freeze11)
+run_dirs(yolov11)
+run_dirs(baseline)
 run_dirs(freeze11)
 
 
