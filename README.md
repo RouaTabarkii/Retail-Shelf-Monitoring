@@ -44,6 +44,8 @@ A computer vision application that detects missing products on retail shelves an
 
 - pip install -r requirements.txt
 
+- dvc pull
+
 ## 5. DataSet : 
 
 - Source : https://www.kaggle.com/datasets/thedatasith/sku110k-annotations
