@@ -2,9 +2,9 @@ import { useState, useRef, useEffect } from 'react'
 import './App.css'
 
 const API_URL = "http://127.0.0.1:8000/predict"
-const INTERVAL_MS = 1000   // une analyse par seconde
+const INTERVAL_MS = 1000   // une analyse par seconde (vidéo et webcam)
 const IOU_MIN = 0.3        // recouvrement minimal pour dire "c'est le même gap"
-const RAYON_NAME = "Grocery Shelf – Pasta & Oils"   // nom fictif, d'après la vidéo
+const RAYON_NAME = "Rayon Épicerie - Pâtes & Huiles"   // nom fictif
 
 // Recouvrement entre deux rectangles (0 = aucun, 1 = identiques)
 function overlap(a, b) {
@@ -18,41 +18,93 @@ function overlap(a, b) {
 }
 
 function App() {
+  const [mode, setMode] = useState("image")          // "image" | "video" | "webcam"
   const [file, setFile] = useState(null)
-  const [videoUrl, setVideoUrl] = useState(null)
+  const [mediaUrl, setMediaUrl] = useState(null)     // adresse de l'image ou de la vidéo choisie
+  const [stream, setStream] = useState(null)         // flux de la webcam
   const [lastResult, setLastResult] = useState(null)
   const [detectedGaps, setDetectedGaps] = useState([])
   const [latencyMs, setLatencyMs] = useState(null)
   const [analysedCount, setAnalysedCount] = useState(0)
   const [skippedCount, setSkippedCount] = useState(0)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
   const videoRef = useRef(null)
   const timerRef = useRef(null)
   const busyRef = useRef(false)
-  const previousGapsRef = useRef([])   // gaps de l'analyse précédente
+  const previousGapsRef = useRef([])
   const idRef = useRef(0)
+  const streamRef = useRef(null)
+
+  // ---------- Remises à zéro ----------
+  function resetAll() {
+    stopAnalysis()
+    previousGapsRef.current = []
+    setFile(null)
+    setMediaUrl(null)
+    setLastResult(null)
+    setDetectedGaps([])
+    setLatencyMs(null)
+    setAnalysedCount(0)
+    setSkippedCount(0)
+    setLoading(false)
+    setError(null)
+  }
 
   function resetMemory() {
     previousGapsRef.current = []
     setLastResult(null)
   }
 
+  function switchMode(newMode) {
+    if (newMode === mode) return
+    stopWebcam()
+    resetAll()
+    setMode(newMode)
+  }
+
+  // ---------- Choix d'un fichier (image ou vidéo) ----------
   function handleChange(e) {
     const selected = e.target.files[0]
     if (!selected) return
 
-    stopAnalysis()
-    resetMemory()
+    resetAll()
     setFile(selected)
-    setVideoUrl(URL.createObjectURL(selected))
-    setDetectedGaps([])
-    setLatencyMs(null)
-    setAnalysedCount(0)
-    setSkippedCount(0)
-    setError(null)
+    setMediaUrl(URL.createObjectURL(selected))
   }
 
+  // ---------- Webcam ----------
+  async function startWebcam() {
+    resetAll()
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+      streamRef.current = s
+      setStream(s)
+    } catch (err) {
+      console.error(err)
+      setError("Impossible d'accéder à la caméra. Vérifie l'autorisation du navigateur.")
+    }
+  }
+
+  function stopWebcam() {
+    stopAnalysis()
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop())
+      streamRef.current = null
+    }
+    setStream(null)
+  }
+
+  // Branche le flux sur la balise <video> dès qu'elle existe
+  useEffect(() => {
+    if (stream && videoRef.current) {
+      videoRef.current.srcObject = stream
+      videoRef.current.play().catch(() => {})
+    }
+  }, [stream])
+
+  // ---------- Capture d'une image de la vidéo ----------
   function captureFrame() {
     return new Promise((resolve, reject) => {
       const video = videoRef.current
@@ -109,6 +161,49 @@ function App() {
     }
   }
 
+  // ---------- Envoi d'une image à FastAPI (commun aux trois modes) ----------
+  async function sendBlob(blob, instant) {
+    const formData = new FormData()
+    formData.append("file", blob, "frame.jpg")
+
+    const start = performance.now()
+    const response = await fetch(API_URL, { method: "POST", body: formData })
+
+    if (!response.ok) {
+      console.error("Erreur API :", response.status)
+      setError(`Erreur du serveur (code ${response.status})`)
+      return
+    }
+
+    const data = await response.json()
+    setLatencyMs(Math.round(performance.now() - start))
+
+    registerNewGaps(data, instant)
+    setLastResult({ ...data, instant })
+    setAnalysedCount((n) => n + 1)
+    setError(null)
+  }
+
+  // Mode image : une seule analyse, au clic
+  async function analyzeImage() {
+    if (!file) return
+
+    setLoading(true)
+    setError(null)
+    setDetectedGaps([])
+    previousGapsRef.current = []
+
+    try {
+      await sendBlob(file, null)
+    } catch (err) {
+      console.error(err)
+      setError("Impossible de joindre l'API. Vérifie que le serveur est lancé.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Modes vidéo et webcam : une analyse à chaque tick du minuteur
   async function analyzeFrame() {
     if (busyRef.current) {
       setSkippedCount((n) => n + 1)
@@ -117,28 +212,11 @@ function App() {
     busyRef.current = true
 
     try {
-      const instant = videoRef.current.currentTime
+      const video = videoRef.current
+      if (!video) return
+      const instant = video.currentTime
       const blob = await captureFrame()
-
-      const formData = new FormData()
-      formData.append("file", blob, "frame.jpg")
-
-      const start = performance.now()
-      const response = await fetch(API_URL, { method: "POST", body: formData })
-
-      if (!response.ok) {
-        console.error("Erreur API :", response.status)
-        setError(`Erreur du serveur (code ${response.status})`)
-        return
-      }
-
-      const data = await response.json()
-      setLatencyMs(Math.round(performance.now() - start))
-
-      registerNewGaps(data, instant)
-      setLastResult({ ...data, instant })
-      setAnalysedCount((n) => n + 1)
-      setError(null)
+      await sendBlob(blob, instant)
     } catch (err) {
       console.error(err)
       setError("Impossible de joindre l'API. Vérifie que le serveur est lancé.")
@@ -158,7 +236,17 @@ function App() {
     timerRef.current = null
   }
 
-  useEffect(() => stopAnalysis, [])
+  // Au démontage : arrête le minuteur et coupe la caméra
+  useEffect(() => {
+    return () => {
+      clearInterval(timerRef.current)
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop())
+      }
+    }
+  }, [])
+
+  const showMedia = mode === "webcam" ? stream : mediaUrl
 
   return (
     <div className="page">
@@ -174,39 +262,103 @@ function App() {
 
       <main className="content">
         <section className="card">
-          <h2>Analyser une vidéo</h2>
-          <div className="upload-row">
-            <label className="btn btn-secondary">
-              <input type="file" accept="video/*" onChange={handleChange} hidden />
-              Choisir une vidéo
-            </label>
-            <span className="file-name">
-              {file ? file.name : "Aucun fichier choisi"}
-            </span>
+          <h2>Source</h2>
+
+          <div className="tabs">
+            <button
+              className={`tab ${mode === "image" ? "tab-active" : ""}`}
+              onClick={() => switchMode("image")}
+            >
+              Image
+            </button>
+            <button
+              className={`tab ${mode === "video" ? "tab-active" : ""}`}
+              onClick={() => switchMode("video")}
+            >
+              Vidéo
+            </button>
+            <button
+              className={`tab ${mode === "webcam" ? "tab-active" : ""}`}
+              onClick={() => switchMode("webcam")}
+            >
+              Webcam
+            </button>
           </div>
+
+          <div className="upload-row">
+            {mode !== "webcam" && (
+              <>
+                <label className="btn btn-secondary">
+                  <input
+                    key={mode}
+                    type="file"
+                    accept={mode === "image" ? "image/*" : "video/*"}
+                    onChange={handleChange}
+                    hidden
+                  />
+                  {mode === "image" ? "Choisir une image" : "Choisir une vidéo"}
+                </label>
+                <span className="file-name">
+                  {file ? file.name : "Aucun fichier choisi"}
+                </span>
+              </>
+            )}
+
+            {mode === "image" && (
+              <button
+                className="btn btn-primary btn-analyze"
+                disabled={!file || loading}
+                onClick={analyzeImage}
+              >
+                {loading ? "Analyse en cours..." : "Analyser"}
+              </button>
+            )}
+
+            {mode === "webcam" && (
+              <>
+                {!stream ? (
+                  <button className="btn btn-primary" onClick={startWebcam}>
+                    Démarrer la caméra
+                  </button>
+                ) : (
+                  <button className="btn btn-secondary" onClick={stopWebcam}>
+                    Arrêter la caméra
+                  </button>
+                )}
+                <span className="file-name">
+                  {stream ? "Caméra active" : "Caméra éteinte"}
+                </span>
+              </>
+            )}
+          </div>
+
           {error && <p className="error">{error}</p>}
         </section>
 
-        {videoUrl && (
+        {showMedia && (
           <section className="card">
             <div className="legend">
               <span><i className="dot dot-green" /> Produit</span>
               <span><i className="dot dot-red" /> Gap</span>
+              <span><i className="dot dot-blue" /> Personne</span>
             </div>
 
-            <div className="video-box">
-          <video
-            ref={videoRef}
-            src={videoUrl}
-            controls
-            autoPlay
-            muted
-            playsInline
-            onPlay={startAnalysis}
-            onPause={stopAnalysis}
-            onEnded={stopAnalysis}
-            onSeeking={resetMemory}
-          />
+            <div className="media-box">
+              {mode === "image" ? (
+                <img src={mediaUrl} alt="Image du rayon" />
+              ) : (
+                <video
+                  ref={videoRef}
+                  src={mode === "video" ? mediaUrl : undefined}
+                  controls={mode === "video"}
+                  muted={mode === "webcam"}
+                  playsInline
+                  onPlay={startAnalysis}
+                  onPause={stopAnalysis}
+                  onEnded={stopAnalysis}
+                  onSeeking={resetMemory}
+                />
+              )}
 
               {lastResult && (
                 <svg
@@ -240,18 +392,18 @@ function App() {
                   ))}
 
                   {(lastResult.personnes || []).map((b, i) => (
-                <rect
-                  key={`h-${i}`}
-                  x={b[0]}
-                  y={b[1]}
-                  width={b[2] - b[0]}
-                  height={b[3] - b[1]}
-                  fill="none"
-                  stroke="dodgerblue"
-                  strokeWidth="4"
-                  strokeDasharray="10 6"
-                />
-              ))}
+                    <rect
+                      key={`h-${i}`}
+                      x={b[0]}
+                      y={b[1]}
+                      width={b[2] - b[0]}
+                      height={b[3] - b[1]}
+                      fill="none"
+                      stroke="dodgerblue"
+                      strokeWidth="4"
+                      strokeDasharray="10 6"
+                    />
+                  ))}
                 </svg>
               )}
             </div>
@@ -260,32 +412,33 @@ function App() {
 
         {lastResult && (
           <section className="card">
-            <h2>Latest Analysis</h2>
+            <h2>Dernière analyse</h2>
             <div className="stats">
               <div className="stat">
                 <span className="stat-value stat-text">{RAYON_NAME}</span>
-                <span className="stat-label">Shelf Name</span>
+                <span className="stat-label">Nom du rayon</span>
               </div>
               <div className="stat">
                 <span className="stat-value">{lastResult.num_boxes}</span>
-                <span className="stat-label">Detected Products</span>
+                <span className="stat-label">Produits détectés</span>
               </div>
               <div className={`stat ${lastResult.gaps.length > 0 ? "stat-alert" : "stat-ok"}`}>
                 <span className="stat-value">{lastResult.gaps.length}</span>
-                <span className="stat-label">Missing Products</span>
+                <span className="stat-label">Produits absents</span>
               </div>
               <div className="stat">
                 <span className="stat-value">{latencyMs} ms</span>
-                <span className="stat-label">Response Time</span>
+                <span className="stat-label">Temps de réponse</span>
               </div>
             </div>
             <p style={{ color: "#6b7280", fontSize: 14, margin: 0 }}>
-              {analysedCount} analyses performed · {skippedCount} images skipped
+              {analysedCount} analyses faites
+              {mode !== "image" && ` · ${skippedCount} images sautées`}
             </p>
           </section>
         )}
 
-        {videoUrl && (
+        {showMedia && (
           <section className="card">
             <h2>Absences détectées</h2>
             {detectedGaps.length === 0 ? (
@@ -307,7 +460,7 @@ function App() {
                     {detectedGaps.map((g) => (
                       <tr key={g.id}>
                         <td>{g.id}</td>
-                        <td>{g.instant.toFixed(1)}</td>
+                        <td>{g.instant == null ? "-" : g.instant.toFixed(1)}</td>
                         <td>{g.etagere + 1}</td>
                         <td>{g.ecart_px}</td>
                       </tr>
@@ -319,6 +472,7 @@ function App() {
           </section>
         )}
       </main>
+
     </div>
   )
 }

@@ -54,6 +54,34 @@
   color: #111827;
 }
 
+/* Choix du mode : image, vidéo, webcam */
+.tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: #f3f4f6;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+.tab {
+  border: none;
+  background: transparent;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+}
+.tab:hover {
+  color: #111827;
+}
+.tab-active {
+  background: #ffffff;
+  color: #1e3a8a;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
 .upload-row {
   display: flex;
   align-items: center;
@@ -103,6 +131,11 @@
 .btn-secondary:hover {
   background: #e5e7eb;
 }
+.btn-analyze {
+  padding: 11px 26px;
+  font-size: 15px;
+  margin-left: auto;
+}
 
 .stats {
   display: grid;
@@ -146,16 +179,17 @@
   color: #15803d;
 }
 
-/* La vidéo et le calque de dessin posé par-dessus */
-.video-box {
+/* Image ou vidéo, avec le calque de dessin posé par-dessus */
+.media-box {
   position: relative;
 }
-.video-box video {
+.media-box video,
+.media-box img {
   display: block;
   width: 100%;
   border-radius: 8px;
 }
-.video-box svg {
+.media-box svg {
   position: absolute;
   top: 0;
   left: 0;
@@ -182,11 +216,11 @@
 .dot-green {
   background: lime;
 }
-.dot-orange {
-  background: orange;
-}
 .dot-red {
   background: red;
+}
+.dot-blue {
+  background: dodgerblue;
 }
 
 .table-wrap {

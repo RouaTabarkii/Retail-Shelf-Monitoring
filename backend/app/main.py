@@ -8,12 +8,12 @@ from sklearn.cluster import DBSCAN
 from ultralytics import YOLO
 
 MODEL_PATH = "C:/Users/LENOVO/Retail-Shelf-Monitoring/runs/baseline/weights/best.pt"
-PERSON_MODEL_PATH = "yolo11n.pt"   
+PERSON_MODEL_PATH = "yolo11n.pt"
 
-SEUIL = 100            
-PERSON_CONF = 0.4      
-PERSON_MARGIN = 20     
-HIDDEN_RATIO = 0.2     
+SEUIL = 100
+PERSON_CONF = 0.4
+PERSON_MARGIN = 20
+HIDDEN_RATIO = 0.2
 
 
 def hidden_by_person(zone, persons):
@@ -75,9 +75,15 @@ async def predict(request: Request, file: UploadFile = File(...)):
 
     if len(bounding_box) == 0:
         return {
-            "filename": file.filename, "num_boxes": 0, "gap_detected": False,
-            "gaps": [], "etageres": {}, "personnes": person_boxes.tolist(),
-            "gaps_ignores": 0, "image_height": H, "image_width": W,
+            "filename": file.filename,
+            "num_boxes": 0,
+            "gap_detected": False,
+            "gaps": [],
+            "etageres": {},
+            "personnes": person_boxes.tolist(),
+            "gaps_ignores": 0,
+            "image_height": H,
+            "image_width": W,
         }
 
     bounding_box_sorted = np.array(sorted(bounding_box, key=lambda box: box[3]))
@@ -103,8 +109,6 @@ async def predict(request: Request, file: UploadFile = File(...)):
             gap = next_product[0] - current_product[2]
             if gap <= SEUIL:
                 continue
-
-            # Zone entre les deux produits voisins, pour tester la présence d'une personne
             zone = (
                 float(current_product[2]),
                 float(min(current_product[1], next_product[1])),
@@ -115,14 +119,16 @@ async def predict(request: Request, file: UploadFile = File(...)):
                 ignored += 1
                 continue
 
-            gaps.append({
-                "etagere": int(shelf_id),
-                "ecart_px": round(float(gap), 2),
-                "gap_end": float(next_product[0]),
-                "gap_start": float(current_product[2]),
-                "y_haut": float(min(p[1] for p in products)),
-                "y_bas": float(max(p[3] for p in products)),
-            })
+            gaps.append(
+                {
+                    "etagere": int(shelf_id),
+                    "ecart_px": round(float(gap), 2),
+                    "gap_end": float(next_product[0]),
+                    "gap_start": float(current_product[2]),
+                    "y_haut": float(min(p[1] for p in products)),
+                    "y_bas": float(max(p[3] for p in products)),
+                }
+            )
 
     return {
         "filename": file.filename,
