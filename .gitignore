@@ -40,3 +40,7 @@ frontend/dist/
 # Env variants and logs
 .env.*
 *.log
+
+# MLflow local tracking
+mlartifacts/
+mlruns/

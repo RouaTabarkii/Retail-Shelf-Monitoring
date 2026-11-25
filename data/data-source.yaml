@@ -1,0 +1,9 @@
+dataset:
+  platform: kaggle
+  slug: thedatasith/sku110k-annotations
+  size: 15.1GB
+  structure: SKU110K_fixed/{images,labels}
+  original_source: https://github.com/eg4000/SKU110K_CVPR19
+  license: CC BY-NC
+  version: not recorded
+  download: kaggle datasets download -d thedatasith/sku110k-annotations
